@@ -36,6 +36,9 @@ const User = db.define('user', {
     type: Sequelize.STRING,
     allowNull: true,
   },
+}, {
+  unique: true,
+  fields: ['email'],
 });
 
 module.exports = User;
