@@ -4,13 +4,15 @@ const multipart = require('connect-multiparty');
 
 const User = require('../models/user');
 const deleteImage = require('../services/deleteImage');
+const jwt = require('../services/jwt');
+const jwtMiddleware = require('../middlewares/JwtMiddleware');
 
 const app = express.Router();
 const multipartMiddleware = multipart({
   uploadDir: './upload/users',
 });
 
-app.get('/users', async (req, res) => {
+app.get('/users', jwtMiddleware, async (req, res) => {
   try {
     const users = await User.findAll();
     res.status(200).json({ users });
@@ -19,7 +21,7 @@ app.get('/users', async (req, res) => {
   }
 });
 
-app.get('/users/:id', async (req, res) => {
+app.get('/users/:id', jwtMiddleware, async (req, res) => {
   const { id } = req.params;
   try {
     const user = await User.findOne({
@@ -58,9 +60,13 @@ app.post('/sign-in', async (req, res) => {
   }
 });
 
-app.put('/users/:id', async (req, res) => {
+app.put('/users/:id', jwtMiddleware, async (req, res) => {
   const { id } = req.params;
   const { body } = req;
+  if (req.auth.id != id) {
+    return res.status(401).json({ message: 'solo puedes actualizar tus propios datos' });
+  }
+
   try {
     const user = await User.findOne({
       where: { id },
@@ -97,11 +103,16 @@ app.delete('/users/:id', async (req, res) => {
   }
 });
 
-app.post('/users/:id/upload', multipartMiddleware, async (req, res) => {
+app.post('/users/:id/upload', [jwtMiddleware, multipartMiddleware], async (req, res) => {
   const { id } = req.params;
   if (req.files) {
     const type = req.files.avatar.type;
     const file = req.files.avatar.path.split('/')[2];
+    if (req.auth.id != id) {
+      deleteImage('users', file);
+      return res.status(401).json({ message: 'solo puedes actualizar tus propios datos' });
+    }
+
     if (type == 'image/jpeg' || type == 'image/png') {
       try {
         const user = await User.findOne({
@@ -129,6 +140,27 @@ app.post('/users/:id/upload', multipartMiddleware, async (req, res) => {
     }
   } else {
     res.status(400).json({ message: 'Sube una imagen' });
+  }
+});
+
+app.post('/login', async (req, res) => {
+  const { body } = req;
+  try {
+    const user = await User.findOne({
+      where: { email: body.email },
+    });
+    if (!user) {
+      return res.status(400).json({ message: 'Usuario no esta registrado' });
+    }
+
+    let check = bcrypt.compareSync(body.password, user.password);
+    if (check) {
+      let token = jwt.getToken(user);
+      return res.status(200).json({ token, user });
+    } else return res.status(400).json({ message: 'Contraseña incorrecta' });
+
+  } catch (err) {
+    res.status(500).json({ err });
   }
 });
 
