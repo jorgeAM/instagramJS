@@ -5,6 +5,7 @@ const program = require('commander');
 const db = require('./db/db');
 const config = require('./config/config');
 const migration = require('./migrations/migration');
+const routes = require('./routes');
 
 const app = express();
 
@@ -18,6 +19,7 @@ if (program.migrate) migration();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+app.use('/api', routes);
 app.get('/', (req, res) => res.send('Hello World!'));
 
 db.authenticate()

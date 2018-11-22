@@ -5,22 +5,36 @@ const User = db.define('user', {
   name: {
     type: Sequelize.STRING,
     allowNull: false,
+    validate: {
+      notEmpty: true,
+    },
   },
   lastname: {
     type: Sequelize.STRING,
     allowNull: false,
+    validate: {
+      notEmpty: true,
+    },
   },
   nickname: {
     type: Sequelize.STRING,
     allowNull: false,
+    unique: true,
+    validate: {
+      notEmpty: true,
+    },
   },
   birthday: {
     type: Sequelize.DATE,
     allowNull: false,
+    validate: {
+      isDate: true,
+    },
   },
   email: {
     type: Sequelize.STRING,
     allowNull: false,
+    unique: true,
     validate: {
       isEmail: true,
     },
@@ -29,16 +43,13 @@ const User = db.define('user', {
     type: Sequelize.STRING,
     allowNull: false,
     validate: {
-      min: 6,
+      notEmpty: true,
     },
   },
   avatar: {
     type: Sequelize.STRING,
     allowNull: true,
   },
-}, {
-  unique: true,
-  fields: ['email'],
 });
 
 module.exports = User;
