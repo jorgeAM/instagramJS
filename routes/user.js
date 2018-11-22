@@ -1,8 +1,14 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const multipart = require('connect-multiparty');
+
 const User = require('../models/user');
+const deleteImage = require('../services/deleteImage');
 
 const app = express.Router();
+const multipartMiddleware = multipart({
+  uploadDir: './upload/users',
+});
 
 app.get('/users', async (req, res) => {
   try {
@@ -88,6 +94,41 @@ app.delete('/users/:id', async (req, res) => {
     res.status(200).json({ message: 'Usuario eliminado' });
   } catch (err) {
     res.status(500).json({ err });
+  }
+});
+
+app.post('/users/:id/upload', multipartMiddleware, async (req, res) => {
+  const { id } = req.params;
+  if (req.files) {
+    const type = req.files.avatar.type;
+    const file = req.files.avatar.path.split('/')[2];
+    if (type == 'image/jpeg' || type == 'image/png') {
+      try {
+        const user = await User.findOne({
+          where: { id },
+        });
+        if (!user) {
+          deleteImage('users', file);
+          return res.status(400).json({ message: 'Usuario no encontrado' });
+        }
+
+        if (user.avatar) {
+          deleteImage('users', user.avatar);
+        }
+
+        user.avatar = file;
+        const updatedUser = await user.save();
+        res.status(200).json({ user: updatedUser });
+      } catch (err) {
+        deleteImage('users', file);
+        res.status(500).json({ err });
+      }
+    } else {
+      deleteImage('users', file);
+      res.status(400).json({ message: 'Solo puede subir archivos JPG o PNG' });
+    }
+  } else {
+    res.status(400).json({ message: 'Sube una imagen' });
   }
 });
 
