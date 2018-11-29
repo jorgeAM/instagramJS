@@ -39,12 +39,12 @@ app.get('/users/:id', jwtMiddleware, async (req, res) => {
 
 app.post('/sign-in', async (req, res) => {
   const { body } = req;
-  if (body.password.length <= 0 || body.password.length < 6) {
-    res.status(400).json({ err: 'Tu contraseña debe tener como minimo 6 caracteres' });
-    return;
-  }
-
   try {
+    if (body.password.length <= 0 || body.password.length < 6) {
+      res.status(400).json({ err: 'Tu contraseña debe tener como minimo 6 caracteres' });
+      return;
+    }
+
     const user = await User.create({
       name: body.name,
       lastname: body.lastname,
