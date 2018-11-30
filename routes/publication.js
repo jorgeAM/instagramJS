@@ -1,7 +1,7 @@
 const express = require('express');
 const multipart = require('connect-multiparty');
 
-const User = require('../models/user');
+const db = require('../db/db');
 const Publication = require('../models/publication');
 const deleteImage = require('../services/deleteImage');
 const jwtMiddleware = require('../middlewares/JwtMiddleware');
@@ -23,19 +23,22 @@ app.get('/publications', jwtMiddleware, async (req, res) => {
 app.get('/publications/:id', jwtMiddleware, async (req, res) => {
   const { id } = req.params;
   try {
-    const publication = await Publication.findOne({
-      where: { id },
-    //   include: [{
-    //     model: User,
-    //     as: 'Author',
-    //   },
-    // ],
-    });
-    if (!publication) {
+    const publication = await db.query(`
+      SELECT
+      p.id, p.body, p.image, p.createdAt,
+      u.id as 'userId', u.name, u.lastname, u.nickname,
+      u.email
+      FROM publications p
+      INNER JOIN users u ON
+      u.id = p.userId
+      WHERE p.id = ${id}
+      LIMIT 1
+      `,  { type: db.QueryTypes.SELECT });
+    if (publication.length === 0) {
       return res.status(400).json({ message: 'Publicación no encontrada' });
     }
 
-    res.status(200).json({ publication });
+    res.status(200).json({ publication: publication[0] });
   } catch (err) {
     res.status(500).json({ err });
   }

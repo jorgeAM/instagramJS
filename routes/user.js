@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const multipart = require('connect-multiparty');
 
 const User = require('../models/user');
+const Publication = require('../models/publication');
 const deleteImage = require('../services/deleteImage');
 const jwt = require('../services/jwt');
 const jwtMiddleware = require('../middlewares/JwtMiddleware');
@@ -31,7 +32,15 @@ app.get('/users/:id', jwtMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Usuario no encontrado' });
     }
 
-    res.status(200).json({ user });
+    const publications = await Publication.findAll({
+      where: { userId: id },
+    });
+
+    if (publications.length <= 0) {
+      res.status(200).json({ user });
+    } else {
+      res.status(200).json({ user, publications });
+    }
   } catch (err) {
     res.status(500).json({ err });
   }
