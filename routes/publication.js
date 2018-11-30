@@ -1,6 +1,7 @@
 const express = require('express');
 const multipart = require('connect-multiparty');
 
+const User = require('../models/user');
 const Publication = require('../models/publication');
 const deleteImage = require('../services/deleteImage');
 const jwtMiddleware = require('../middlewares/JwtMiddleware');
@@ -24,6 +25,11 @@ app.get('/publications/:id', jwtMiddleware, async (req, res) => {
   try {
     const publication = await Publication.findOne({
       where: { id },
+    //   include: [{
+    //     model: User,
+    //     as: 'Author',
+    //   },
+    // ],
     });
     if (!publication) {
       return res.status(400).json({ message: 'Publicación no encontrada' });
