@@ -11,6 +11,12 @@ const migrate = async () => {
     User.hasMany(Publication);
     User.hasMany(Comment);
     Publication.hasMany(Comment);
+
+    // User.belongsToMany(User, {
+    //   as: 'Children',
+    //   through: 'UserChildren',
+    // });
+
     /*CREACIÓN DE TABLAS*/
     await User.sync();
     await Publication.sync();
